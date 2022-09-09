@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">BLE Bond Test App</string>
+    <string name="app_description">This app performs a BLE scan for a companion nRF52840 DK running a specific firmware that advertises the Heart Rate Service. Once found and connected to, the app then attempts to subscribe to the Heart Rate Measurement Characteristic, which is encrypted and requires a BLE bond before its value can be read.</string>
+</resources>
