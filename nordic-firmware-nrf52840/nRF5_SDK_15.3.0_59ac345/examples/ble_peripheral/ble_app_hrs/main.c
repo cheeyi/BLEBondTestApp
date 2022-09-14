@@ -127,6 +127,7 @@
 #define SEC_PARAM_OOB                       0U                                       /**< Out Of Band data not available. */
 #define SEC_PARAM_MIN_KEY_SIZE              7U                                       /**< Minimum encryption key size. */
 #define SEC_PARAM_MAX_KEY_SIZE              16U                                      /**< Maximum encryption key size. */
+#define PRIVATE_ADDR_CYCLE_INTERVAL_S       60U                                      /**< The interval at which the private address is refreshed by LE Privacy. */
 
 #define DEAD_BEEF                           0xDEADBEEF                              /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
@@ -882,7 +883,7 @@ static void set_le_privacy(bool enabled, bool isPairing)
     {
         ble_gap_privacy_params.privacy_mode = BLE_GAP_PRIVACY_MODE_DEVICE_PRIVACY;
         ble_gap_privacy_params.private_addr_type = BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE;
-        ble_gap_privacy_params.private_addr_cycle_s = BLE_GAP_DEFAULT_PRIVATE_ADDR_CYCLE_INTERVAL_S;
+        ble_gap_privacy_params.private_addr_cycle_s = PRIVATE_ADDR_CYCLE_INTERVAL_S;
         NRF_LOG_INFO("set_le_privacy mode=%d, addr_type=%d, cycle_interval(seconds)=%d", ble_gap_privacy_params.privacy_mode, ble_gap_privacy_params.private_addr_type, ble_gap_privacy_params.private_addr_cycle_s);
     }
     else
