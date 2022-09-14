@@ -82,7 +82,7 @@
 #include "nrf_log_default_backends.h"
 
 
-#define DEVICE_NAME                         "Nordic_HRM"                            /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                         "Android13FTW"                          /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME                   "NordicSemiconductor"                   /**< Manufacturer. Will be passed to Device Information Service. */
 #define APP_ADV_INTERVAL                    300                                     /**< The advertising interval (in units of 0.625 ms. This value corresponds to 187.5 ms). */
 
@@ -119,14 +119,14 @@
 
 #define LESC_DEBUG_MODE                     0                                       /**< Set to 1 to use LESC debug keys, allows you to use a sniffer to inspect traffic. */
 
-#define SEC_PARAM_BOND                      1                                       /**< Perform bonding. */
-#define SEC_PARAM_MITM                      0                                       /**< Man In The Middle protection not required. */
-#define SEC_PARAM_LESC                      1                                       /**< LE Secure Connections enabled. */
-#define SEC_PARAM_KEYPRESS                  0                                       /**< Keypress notifications not enabled. */
-#define SEC_PARAM_IO_CAPABILITIES           BLE_GAP_IO_CAPS_NONE                    /**< No I/O capabilities. */
-#define SEC_PARAM_OOB                       0                                       /**< Out Of Band data not available. */
-#define SEC_PARAM_MIN_KEY_SIZE              7                                       /**< Minimum encryption key size. */
-#define SEC_PARAM_MAX_KEY_SIZE              16                                      /**< Maximum encryption key size. */
+#define SEC_PARAM_BOND                      1U                                       /**< Perform bonding. */
+#define SEC_PARAM_MITM                      0U                                       /**< Man In The Middle protection not required. */
+#define SEC_PARAM_LESC                      0U                                       /**< LE Secure Connections not enabled. */
+#define SEC_PARAM_KEYPRESS                  0U                                       /**< Keypress notifications not enabled. */
+#define SEC_PARAM_IO_CAPABILITIES           BLE_GAP_IO_CAPS_NONE                     /**< No I/O capabilities. */
+#define SEC_PARAM_OOB                       0U                                       /**< Out Of Band data not available. */
+#define SEC_PARAM_MIN_KEY_SIZE              7U                                       /**< Minimum encryption key size. */
+#define SEC_PARAM_MAX_KEY_SIZE              16U                                      /**< Maximum encryption key size. */
 
 #define DEAD_BEEF                           0xDEADBEEF                              /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
@@ -492,8 +492,8 @@ static void services_init(void)
     hrs_init.p_body_sensor_location      = &body_sensor_location;
 
     // Here the sec level for the Heart Rate Service can be changed/increased.
-    hrs_init.hrm_cccd_wr_sec = SEC_OPEN;
-    hrs_init.bsl_rd_sec      = SEC_OPEN;
+    hrs_init.hrm_cccd_wr_sec = SEC_JUST_WORKS;
+    hrs_init.bsl_rd_sec      = SEC_JUST_WORKS;
 
     err_code = ble_hrs_init(&m_hrs, &hrs_init);
     APP_ERROR_CHECK(err_code);
@@ -507,9 +507,9 @@ static void services_init(void)
     bas_init.initial_batt_level   = 100;
 
     // Here the sec level for the Battery Service can be changed/increased.
-    bas_init.bl_rd_sec        = SEC_OPEN;
-    bas_init.bl_cccd_wr_sec   = SEC_OPEN;
-    bas_init.bl_report_rd_sec = SEC_OPEN;
+    bas_init.bl_rd_sec        = SEC_JUST_WORKS;
+    bas_init.bl_cccd_wr_sec   = SEC_JUST_WORKS;
+    bas_init.bl_report_rd_sec = SEC_JUST_WORKS;
 
     err_code = ble_bas_init(&m_bas, &bas_init);
     APP_ERROR_CHECK(err_code);
@@ -859,6 +859,42 @@ static void peer_manager_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
+static void get_le_privacy(ble_gap_privacy_params_t *privacyParams, ble_gap_irk_t *irk)
+{
+    ret_code_t             err_code;
+
+    privacyParams->p_device_irk = irk;
+    err_code = pm_privacy_get(privacyParams);
+    APP_ERROR_CHECK(err_code);
+
+    NRF_LOG_INFO("get_le_privacy mode=%d, addr_type=%d, cycle_interval(seconds)=%d", privacyParams->privacy_mode, privacyParams->private_addr_type, privacyParams->private_addr_cycle_s);
+    //NRF_LOG_HEXDUMP_INFO(privacyParams->p_device_irk, sizeof(privacyParams->p_device_irk));
+}
+
+static void set_le_privacy(bool enabled, bool isPairing)
+{
+    ble_gap_privacy_params_t ble_gap_privacy_params = {0};
+    ble_gap_irk_t irk;
+    ble_gap_privacy_params_t privacy_params;
+    get_le_privacy(&privacy_params, &irk);
+
+    if (enabled)
+    {
+        ble_gap_privacy_params.privacy_mode = BLE_GAP_PRIVACY_MODE_DEVICE_PRIVACY;
+        ble_gap_privacy_params.private_addr_type = BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE;
+        ble_gap_privacy_params.private_addr_cycle_s = BLE_GAP_DEFAULT_PRIVATE_ADDR_CYCLE_INTERVAL_S;
+        NRF_LOG_INFO("set_le_privacy mode=%d, addr_type=%d, cycle_interval(seconds)=%d", ble_gap_privacy_params.privacy_mode, ble_gap_privacy_params.private_addr_type, ble_gap_privacy_params.private_addr_cycle_s);
+    }
+    else
+    {
+        ble_gap_privacy_params.privacy_mode = BLE_GAP_PRIVACY_MODE_OFF;
+        NRF_LOG_INFO("set_le_privacy OFF");
+    }
+
+    const ret_code_t err_code = pm_privacy_set(&ble_gap_privacy_params);
+    APP_ERROR_CHECK(err_code);
+}
+
 
 /**@brief Function for initializing the Advertising functionality.
  */
@@ -965,6 +1001,9 @@ int main(void)
     sensor_simulator_init();
     conn_params_init();
     peer_manager_init();
+    
+    // Configure LE Privacy
+    set_le_privacy(true, false);
 
     // Start execution.
     NRF_LOG_INFO("Heart Rate Sensor example started.");
