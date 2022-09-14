@@ -13,15 +13,14 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.punchthrough.blebondtestapp.ui.theme.BLEBondTestAppTheme
@@ -103,16 +102,32 @@ class MainActivity : ComponentActivity() {
                             text = getString(R.string.app_description),
                             modifier = Modifier.padding(16.dp)
                         )
-                        Button(
-                            onClick = {
-                                bluetoothInteractor.startTesting()
-                            },
-                            enabled = permissionsGranted.value &&
-                                    bluetoothInteractor.currentTestStage.value ==
-                                    BluetoothInteractor.TestStage.IDLE
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.align(alignment = Alignment.CenterHorizontally)
                         ) {
-                            Text(text = "Run Test")
+                            Button(
+                                onClick = {
+                                    Intent(Intent.ACTION_VIEW).apply {
+                                        data = Uri.parse("https://github.com/cheeyi/BLEBondTestApp#sample-android-app")
+                                        startActivity(this)
+                                    }
+                                }
+                            ) {
+                                Text(text = "Instructions")
+                            }
+                            Button(
+                                onClick = {
+                                    bluetoothInteractor.startTesting()
+                                },
+                                enabled = permissionsGranted.value &&
+                                        bluetoothInteractor.currentTestStage.value ==
+                                        BluetoothInteractor.TestStage.IDLE
+                            ) {
+                                Text(text = "Run Test")
+                            }
                         }
+
                         LogTable(logEntries = logEntries)
                     }
                 }
