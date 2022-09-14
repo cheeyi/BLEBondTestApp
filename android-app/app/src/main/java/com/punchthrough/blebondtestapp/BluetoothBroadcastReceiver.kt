@@ -46,13 +46,6 @@ class BluetoothBroadcastReceiver(val logEntries: SnapshotStateList<LogEntry>) : 
         }
     }
 
-    private fun describeBluetoothBondStatus(status: Int) = when (status) {
-        BluetoothDevice.BOND_BONDED -> "BONDED"
-        BluetoothDevice.BOND_BONDING -> "BONDING"
-        BluetoothDevice.BOND_NONE -> "NOT BONDED"
-        else -> "Unexpected Android BluetoothDevice bond state of $status!"
-    }
-
     private fun describeBluetoothStatus(status: Int) = when (status) {
         BluetoothAdapter.STATE_OFF -> "OFF"
         BluetoothAdapter.STATE_TURNING_OFF -> "TURNING_OFF"

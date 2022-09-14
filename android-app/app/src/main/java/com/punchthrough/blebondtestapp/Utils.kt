@@ -2,6 +2,7 @@ package com.punchthrough.blebondtestapp
 
 import android.Manifest
 import android.app.Activity
+import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -55,6 +56,13 @@ private val timeZone = ZoneId.of(TimeZone.getDefault().id)
 fun DateTimeFormatter.dateFormatted(millisTimestamp: Long): String = format(
     Instant.ofEpochMilli(millisTimestamp).atZone(timeZone)
 )
+
+fun describeBluetoothBondStatus(status: Int) = when (status) {
+    BluetoothDevice.BOND_BONDED -> "BONDED"
+    BluetoothDevice.BOND_BONDING -> "BONDING"
+    BluetoothDevice.BOND_NONE -> "NOT BONDED"
+    else -> "Unexpected Android BluetoothDevice bond state of $status!"
+}
 
 object Util {
     fun uuidFromShortCode16(shortCode16: String): UUID? {
