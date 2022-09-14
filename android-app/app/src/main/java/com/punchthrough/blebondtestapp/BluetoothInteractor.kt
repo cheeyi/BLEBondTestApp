@@ -9,6 +9,7 @@ import android.os.Looper
 import android.os.ParcelUuid
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.core.os.postDelayed
 import timber.log.Timber
 
 @SuppressLint("MissingPermission")
@@ -130,29 +131,32 @@ class BluetoothInteractor(val context: Context, val logEntries: SnapshotStateLis
             val bondState = describeBluetoothBondStatus(peripheralBondState)
             logEntries.log(
                 "onCharacteristicRead status $status, bond state: $bondState",
-                LogLevel.WARN
+                LogLevel.DEBUG
             )
             if (status == BluetoothGatt.GATT_SUCCESS && peripheralBondState == BluetoothDevice.BOND_BONDED) {
                 logEntries.log("Bonded and read was successful", LogLevel.WARN)
                 bondedMacAddress = connectedGatt?.device?.address
                 when (currentTestStage.value) {
                     TestStage.INITIATE_BOND -> {
+                        logEntries.log("Waiting 5 seconds to simulate other events", LogLevel.WARN)
                         transitionTestStageTo(TestStage.INTENTIONAL_DISCONNECT)
-                        connectedGatt?.close()
-                        logEntries.log("Disconnected from peripheral on purpose", LogLevel.DEBUG)
-                        transitionTestStageTo(TestStage.FIRST_RECONNECT_TO_BONDED_PERIPHERAL)
-                        val peripheralToReconnect = bluetoothAdapter?.bondedDevices?.firstOrNull {
-                            it.address == bondedMacAddress
-                        } ?: run {
-                            logEntries.log("Unable to find bonded device!", LogLevel.ERROR)
-                            resetState()
-                            return
+                        Handler(Looper.getMainLooper()).postDelayed(5_000L) {
+                            connectedGatt?.close()
+                            logEntries.log("Disconnected from peripheral on purpose", LogLevel.DEBUG)
+                            transitionTestStageTo(TestStage.FIRST_RECONNECT_TO_BONDED_PERIPHERAL)
+                            val peripheralToReconnect = bluetoothAdapter?.bondedDevices?.firstOrNull {
+                                it.address == bondedMacAddress
+                            } ?: run {
+                                logEntries.log("Unable to find bonded device!", LogLevel.ERROR)
+                                resetState()
+                                return@postDelayed
+                            }
+                            logEntries.log(
+                                "Reconnecting to bonded peripheral $bondedMacAddress"
+                                , LogLevel.DEBUG
+                            )
+                            peripheralToReconnect.connectGatt(context.applicationContext, false, this)
                         }
-                        logEntries.log(
-                            "Reconnecting to bonded peripheral $bondedMacAddress"
-                            , LogLevel.DEBUG
-                        )
-                        peripheralToReconnect.connectGatt(context.applicationContext, false, this)
                     }
                     TestStage.FIRST_RECONNECT_SUCCEEDED -> {
                         transitionTestStageTo(TestStage.INTENTIONAL_DISCONNECT_AND_UNBOND)
