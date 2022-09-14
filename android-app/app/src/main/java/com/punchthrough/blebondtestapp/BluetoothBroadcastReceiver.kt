@@ -24,7 +24,7 @@ class BluetoothBroadcastReceiver(val logEntries: SnapshotStateList<LogEntry>) : 
 
             val bondTransition =
                 "${describeBluetoothBondStatus(previousBondState)} to ${describeBluetoothBondStatus(bondState)}"
-            logEntries.log("${device.address} bond state changed | $bondTransition", LogLevel.WARN)
+            logEntries.log("${device.address} bond state changed | $bondTransition", LogLevel.DEBUG)
         } else if (action == BluetoothAdapter.ACTION_STATE_CHANGED &&
             hasExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE) &&
             hasExtra(BluetoothAdapter.EXTRA_STATE)

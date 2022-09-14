@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -39,9 +40,6 @@ class MainActivity : ComponentActivity() {
 
         logEntries.log("Permissions granted: ${permissionsGranted.value}", LogLevel.WARN)
         when {
-            permissionsGranted.value -> {
-                bluetoothInteractor.startTesting()
-            }
             deniedPermissions.isNotEmpty() -> {
                 // One or more required permissions is denied, unable to proceed
                 logEntries.log("Denied permission list: $deniedPermissions", LogLevel.ERROR)
@@ -105,6 +103,16 @@ class MainActivity : ComponentActivity() {
                             text = getString(R.string.app_description),
                             modifier = Modifier.padding(16.dp)
                         )
+                        Button(
+                            onClick = {
+                                bluetoothInteractor.startTesting()
+                            },
+                            enabled = permissionsGranted.value &&
+                                    bluetoothInteractor.currentTestStage.value ==
+                                    BluetoothInteractor.TestStage.IDLE
+                        ) {
+                            Text(text = "Run Test")
+                        }
                         LogTable(logEntries = logEntries)
                     }
                 }
