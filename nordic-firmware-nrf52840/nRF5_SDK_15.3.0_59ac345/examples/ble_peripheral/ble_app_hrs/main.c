@@ -220,15 +220,44 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
 
     switch (p_evt->evt_id)
     {
+        case PM_EVT_BONDED_PEER_CONNECTED:
+            NRF_LOG_INFO("PM_EVT_BONDED_PEER_CONNECTED");
+            break;
+        case PM_EVT_CONN_SEC_SUCCEEDED:
+            NRF_LOG_INFO("PM_EVT_CONN_SEC_SUCCEEDED");
+            break;
+        case PM_EVT_CONN_SEC_FAILED:
+            if (p_evt->params.conn_sec_failed.error == PM_CONN_SEC_ERROR_PIN_OR_KEY_MISSING)
+            {
+                NRF_LOG_WARNING("Persistent PM_EVT_CONN_SEC_FAILED: error: %d (PM_CONN_SEC_ERROR_PIN_OR_KEY_MISSING): Clearing bond and disconnecting BLE, device must be paired again", p_evt->params.conn_sec_failed.error);
+                (void)pm_peer_delete(p_evt->peer_id);
+            }
+            else
+            {
+                NRF_LOG_WARNING("Transient PM_EVT_CONN_SEC_FAILED: error: %d: Disconnecting BLE", p_evt->params.conn_sec_failed.error);
+            }
+            (void)sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+            break;
+        case PM_EVT_CONN_SEC_CONFIG_REQ:
+            {
+                NRF_LOG_DEBUG("PM_EVT_CONN_SEC_CONFIG_REQ");
+                pm_conn_sec_config_t conn_sec_config = {.allow_repairing = true};
+                pm_conn_sec_config_reply(p_evt->conn_handle, &conn_sec_config);
+                break;
+            }
+        case PM_EVT_PEERS_DELETE_FAILED:
+            NRF_LOG_DEBUG("PM_EVT_PEERS_DELETE_FAILED");
+            break;
         case PM_EVT_PEERS_DELETE_SUCCEEDED:
+            NRF_LOG_DEBUG("Successfully Deleted Peer ID: %d", p_evt->peer_id);
             advertising_start(false);
             break;
 
         default:
+            NRF_LOG_DEBUG("pm_evt_handler default: 0x%x", p_evt->evt_id);
             break;
     }
 }
-
 
 /**@brief Function for performing battery measurement and updating the Battery Level characteristic
  *        in Battery Service.
@@ -732,11 +761,11 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
                                              BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
             APP_ERROR_CHECK(err_code);
             break;
-    
+
         case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
             NRF_LOG_DEBUG("BLE_GAP_EVT_SEC_PARAMS_REQUEST");
             break;
-        
+
         case BLE_GAP_EVT_AUTH_KEY_REQUEST:
             NRF_LOG_INFO("BLE_GAP_EVT_AUTH_KEY_REQUEST");
             break;
@@ -1014,7 +1043,7 @@ int main(void)
     sensor_simulator_init();
     conn_params_init();
     peer_manager_init();
-    
+
     // Configure LE Privacy
     set_le_privacy(true, false);
 
