@@ -9,7 +9,6 @@ import android.os.Looper
 import android.os.ParcelUuid
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.core.os.postDelayed
 import timber.log.Timber
 
 @SuppressLint("MissingPermission")
@@ -90,6 +89,26 @@ class BluetoothInteractor(val context: Context, val logEntries: SnapshotStateLis
                         }
                     }
                 }
+                TestStage.INTENTIONAL_DISCONNECT -> {
+                    if (status == BluetoothGatt.GATT_SUCCESS && newState == BluetoothProfile.STATE_DISCONNECTED) {
+                        connectedGatt?.close()
+                        connectedGatt = null
+                        logEntries.log("Disconnected from peripheral as expected", LogLevel.ERROR)
+                        transitionTestStageTo(TestStage.FIRST_RECONNECT_TO_BONDED_PERIPHERAL)
+                        val peripheralToReconnect = bluetoothAdapter?.bondedDevices?.firstOrNull {
+                            it.address == bondedMacAddress
+                        } ?: run {
+                            logEntries.log("Unable to find bonded device!", LogLevel.ERROR)
+                            resetState()
+                            return
+                        }
+                        logEntries.log(
+                            "Reconnecting to bonded peripheral $bondedMacAddress"
+                            , LogLevel.DEBUG
+                        )
+                        peripheralToReconnect.connectGatt(context.applicationContext, false, this)
+                    }
+                }
                 else -> {
                     logEntries.log(
                         "Unexpected onConnectionStateChange status $status, newState: $newState" +
@@ -116,10 +135,10 @@ class BluetoothInteractor(val context: Context, val logEntries: SnapshotStateLis
                 )
                 transitionTestStageTo(TestStage.FIRST_RECONNECT_SUCCEEDED)
             }
-            gatt.getService(Util.uuidFromShortCode16("180D"))
-                .getCharacteristic(Util.uuidFromShortCode16("2A38"))
-                .apply {
-                    gatt.readCharacteristic(this)
+            connectedGatt?.getService(Util.uuidFromShortCode16("180D"))
+                ?.getCharacteristic(Util.uuidFromShortCode16("2A38"))
+                ?.apply {
+                    connectedGatt?.readCharacteristic(this)
                 }
         }
 
@@ -138,25 +157,12 @@ class BluetoothInteractor(val context: Context, val logEntries: SnapshotStateLis
                 bondedMacAddress = connectedGatt?.device?.address
                 when (currentTestStage.value) {
                     TestStage.INITIATE_BOND -> {
-                        logEntries.log("Waiting 5 seconds to simulate other events", LogLevel.WARN)
                         transitionTestStageTo(TestStage.INTENTIONAL_DISCONNECT)
-                        Handler(Looper.getMainLooper()).postDelayed(5_000L) {
-                            connectedGatt?.close()
-                            logEntries.log("Disconnected from peripheral on purpose", LogLevel.DEBUG)
-                            transitionTestStageTo(TestStage.FIRST_RECONNECT_TO_BONDED_PERIPHERAL)
-                            val peripheralToReconnect = bluetoothAdapter?.bondedDevices?.firstOrNull {
-                                it.address == bondedMacAddress
-                            } ?: run {
-                                logEntries.log("Unable to find bonded device!", LogLevel.ERROR)
-                                resetState()
-                                return@postDelayed
-                            }
-                            logEntries.log(
-                                "Reconnecting to bonded peripheral $bondedMacAddress"
-                                , LogLevel.DEBUG
-                            )
-                            peripheralToReconnect.connectGatt(context.applicationContext, false, this)
-                        }
+                        logEntries.log(
+                            "Waiting for firmware-initiated disconnect, " +
+                                    "please press Button 1 on the nRF52840",
+                            LogLevel.WARN
+                        )
                     }
                     TestStage.FIRST_RECONNECT_SUCCEEDED -> {
                         transitionTestStageTo(TestStage.INTENTIONAL_DISCONNECT_AND_UNBOND)
