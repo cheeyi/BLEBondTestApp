@@ -25,5 +25,6 @@ The `android-app` directory contains a barebones Android app intended to work wi
 1. Build and install the app onto an Android 13 device using Android Studio.
 2. When the app launches, grant it permission to use Bluetooth for scanning and connecting to nearby peripherals.
 3. Hit the "Run Test" button.
-4. If the firmware is advertising, the app will connect to it, bond with it, and read a value off the Body Sensor Location characteristic. After that, it'll disconnect from the firmware (while remaining bonded) and reconnect again. If this reconnection and another subsequent characteristic read are successful, the test is deemed to have been successful for this iteration.
-5. Repeat by running steps 3 and 4 again. If the issue is reproduced, the reconnection to the bonded peripheral should fail as described in [this comment](https://issuetracker.google.com/issues/242755161#comment70).
+4. If the firmware is advertising, the app will connect to it, bond with it, and read a value off the Body Sensor Location characteristic. 
+5. After that, you'll need to press Button 1 on the nRF52840 which should trigger a disconnect from the firmware (while remaining bonded) and the app will reconnect to the nRF52840 again. If this reconnection and another subsequent characteristic read are successful, the test is deemed to have been successful for this iteration.
+6. Repeat by running steps 3 through 5 again. If the issue is reproduced, the reconnection to the bonded peripheral should fail as described in [this comment](https://issuetracker.google.com/issues/242755161#comment70).
