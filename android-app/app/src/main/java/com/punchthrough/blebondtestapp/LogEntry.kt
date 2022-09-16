@@ -7,9 +7,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -45,6 +43,18 @@ fun SnapshotStateList<LogEntry>.log(message: String, level: LogLevel) {
 fun LogTable(logEntries: List<LogEntry>) {
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    var numberOfLogEntries by remember { mutableStateOf(logEntries.size) }
+
+    if (numberOfLogEntries != logEntries.size) {
+        numberOfLogEntries = logEntries.size
+    }
+
+    LaunchedEffect(numberOfLogEntries) {
+        coroutineScope.launch {
+            listState.animateScrollToItem(logEntries.lastIndex)
+        }
+    }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             "Log",
@@ -66,11 +76,6 @@ fun LogTable(logEntries: List<LogEntry>) {
                         LogLevel.ERROR -> MaterialTheme.colors.error
                     }
                 )
-                LaunchedEffect(logEntries) {
-                    coroutineScope.launch {
-                        listState.animateScrollToItem(logEntries.lastIndex)
-                    }
-                }
             }
         }
     }
