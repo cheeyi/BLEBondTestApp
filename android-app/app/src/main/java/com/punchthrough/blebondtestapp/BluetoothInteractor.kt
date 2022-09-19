@@ -149,7 +149,8 @@ class BluetoothInteractor(val context: Context, val logEntries: SnapshotStateLis
         ) {
             val bondState = describeBluetoothBondStatus(peripheralBondState)
             logEntries.log(
-                "onCharacteristicRead status $status, bond state: $bondState",
+                "onCharacteristicRead status $status, bond state: $bondState, " +
+                        "value: ${characteristic.value.toHexString()}",
                 LogLevel.DEBUG
             )
             if (status == BluetoothGatt.GATT_SUCCESS && peripheralBondState == BluetoothDevice.BOND_BONDED) {
