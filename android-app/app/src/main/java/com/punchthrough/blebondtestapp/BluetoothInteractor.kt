@@ -87,6 +87,20 @@ class BluetoothInteractor(val context: Context, val logEntries: SnapshotStateLis
                         Handler(Looper.getMainLooper()).post {
                             gatt.discoverServices()
                         }
+                    } else if (status == 133 && newState == BluetoothProfile.STATE_DISCONNECTED) {
+                        logEntries.log("Failed to connect due to status 133!", LogLevel.ERROR)
+                        gatt.close()
+                        gatt.device.apply {
+                            if (bondState == BluetoothDevice.BOND_BONDED) {
+                                try {
+                                    val method = this::class.java.getMethod("removeBond").invoke(this)
+                                    logEntries.log("removeBond called via Reflection", LogLevel.DEBUG)
+                                } catch (e: Throwable) {
+                                    Timber.e(e, "Failed to remove bond")
+                                }
+                            }
+                        }
+                        resetState()
                     }
                 }
                 TestStage.INTENTIONAL_DISCONNECT -> {
@@ -106,7 +120,12 @@ class BluetoothInteractor(val context: Context, val logEntries: SnapshotStateLis
                             "Reconnecting to bonded peripheral $bondedMacAddress"
                             , LogLevel.DEBUG
                         )
-                        peripheralToReconnect.connectGatt(context.applicationContext, false, this)
+                        peripheralToReconnect.connectGatt(
+                            context.applicationContext,
+                            false,
+                            this,
+                            BluetoothDevice.TRANSPORT_LE
+                        )
                     }
                 }
                 else -> {
