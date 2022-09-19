@@ -227,15 +227,8 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
             NRF_LOG_INFO("PM_EVT_CONN_SEC_SUCCEEDED");
             break;
         case PM_EVT_CONN_SEC_FAILED:
-            if (p_evt->params.conn_sec_failed.error == PM_CONN_SEC_ERROR_PIN_OR_KEY_MISSING)
-            {
-                NRF_LOG_WARNING("Persistent PM_EVT_CONN_SEC_FAILED: error: %d (PM_CONN_SEC_ERROR_PIN_OR_KEY_MISSING): Clearing bond and disconnecting BLE, device must be paired again", p_evt->params.conn_sec_failed.error);
-                (void)pm_peer_delete(p_evt->peer_id);
-            }
-            else
-            {
-                NRF_LOG_WARNING("Transient PM_EVT_CONN_SEC_FAILED: error: %d: Disconnecting BLE", p_evt->params.conn_sec_failed.error);
-            }
+            NRF_LOG_WARNING("PM_EVT_CONN_SEC_FAILED: error: %d: Disconnecting BLE", p_evt->params.conn_sec_failed.error);
+            (void)pm_peer_delete(p_evt->peer_id);
             (void)sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
             break;
         case PM_EVT_CONN_SEC_CONFIG_REQ:
